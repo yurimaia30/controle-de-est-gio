@@ -5,6 +5,7 @@ const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g
 const fmt=v=>v?v.split('-').reverse().join('/'):'Não informado';
 let profile=null, unsub=[], fields=[], students=[], opportunities=[], attendance=[], approvals=[], settings={}, view='fields', selectedField='', selectedDate=Domain.today();
 const drafts=new Map();
+let studentSearch='',studentOrder='alpha';
 const admin=()=>profile?.role==='admin'&&['Yuri Maia','Luiz Paulo'].includes(profile.name), accessible=g=>Domain.canAccess(profile,g);
 function notify(message,error=false){$('message').hidden=false;$('message').textContent=message;$('message').style.borderColor=error?'#fb7185':'#277487';}
 function failure(e){console.error(e);const message=e.code==='permission-denied'?'Acesso negado. Verifique o perfil e as regras do Firebase.':e.message||'Não foi possível salvar. Tente novamente.';notify(message,true);if($('dialog').open){let p=$('dialog-error');if(!p){p=document.createElement('p');p.id='dialog-error';p.className='warning';p.setAttribute('role','alert');$('dialog-content').prepend(p);}p.textContent=message;}}
@@ -63,7 +64,13 @@ function tceModal(id){
 function renderFields(){
   $('content').innerHTML=fields.length?fields.map(f=>{
     const available=f.slots.filter(s=>!s.bloqueada&&!s.aluno).length;
-    return `<article class="card"><div class="row between"><div><span class="badge">${esc(f.group)}</span><h2>${esc(f.nome)} · ${esc(f.turno)}</h2><p><span class="radiation" aria-label="Radiologia">☢</span> ${esc(f.preceptor)}</p></div><div>${available} vagas/dias livres${admin()?button('Nova oportunidade','op',f.id):''}</div></div><div class="scroll"><table><thead><tr><th>Vaga</th><th>Dia(s)</th><th>Aluno</th><th>Período</th><th>Observações</th>${admin()?'<th>Ações</th>':''}</tr></thead><tbody>${f.slots.map(s=>`<tr><td>${s.vaga}</td><td>${s.dias.map(d=>Domain.days[d]).join(', ')}</td><td class="${s.bloqueada?'locked':''}">${s.bloqueada?'X · indisponível':esc(s.aluno)||'<span class="good">Disponível</span>'}</td><td>${s.aluno?fmt(s.inicio)+' a '+fmt(s.fim):'—'}</td><td class="note">${esc(s.obs)}</td>${admin()?`<td>${!s.bloqueada?button(s.aluno?'Cadastrar período / ficha':'Alocar aluno','slot',f.id+'|'+s.id):''}${button('Observação','slot-note',f.id+'|'+s.id)}${s.aluno?button('Liberar','release',f.id+'|'+s.id,'danger'):''}</td>`:''}</tr>`).join('')}</tbody></table></div>${!f.slots.length?'<p class="warning">Vagas não informadas na planilha.</p>':''}<h3 style="margin-top:20px">Observações do campo</h3><p class="note">${esc(f.observacoes)||'Nenhuma observação.'}</p>${admin()?button('Editar observações','field-note',f.id):''}${admin()&&f.id==='UPA-MANHA'?button('Cadastrar vaga confirmada','new-slot',f.id):''}</article>`;
+    const days=[1,2,3,4,5,6,0].filter(day=>f.slots.some(s=>s.dias.includes(day)));
+    const tables=days.map(day=>{
+      const slots=f.slots.filter(s=>s.dias.includes(day)).sort((a,b)=>a.vaga-b.vaga);
+      const free=slots.filter(s=>!s.bloqueada&&!s.aluno).length,occupied=slots.filter(s=>!s.bloqueada&&s.aluno).length,blocked=slots.filter(s=>s.bloqueada).length;
+      return `<section class="day-panel" aria-label="${esc(f.nome)} · ${Domain.days[day]}"><div class="day-heading"><h3>${Domain.days[day]}</h3><span class="${free?'good':'locked'}">${free} ${free===1?'vaga livre':'vagas livres'}</span></div><p class="day-summary">${occupied} ocupadas${blocked?' · '+blocked+' bloqueadas':''}</p><table><thead><tr><th>Vaga</th><th>Aluno</th></tr></thead><tbody>${slots.map(s=>`<tr class="${!s.bloqueada&&!s.aluno?'free-slot':''}"><td>${s.vaga}</td><td>${s.bloqueada?'<span class="locked">X · indisponível</span>':s.aluno?`<strong>${esc(s.aluno)}</strong>`:'<strong class="good">Disponível</strong>'}${s.aluno?`<small class="slot-period">${s.inicio||s.fim?fmt(s.inicio)+' a '+fmt(s.fim):'Período não cadastrado'}</small>`:''}${s.obs?`<p class="note slot-note">${esc(s.obs)}</p>`:''}${admin()?`<details class="slot-actions"><summary>Gerenciar vaga</summary><div>${!s.bloqueada?button(s.aluno?'Cadastrar período / ficha':'Alocar aluno','slot',f.id+'|'+s.id):''}${button('Observação','slot-note',f.id+'|'+s.id)}${s.aluno?button('Liberar','release',f.id+'|'+s.id,'danger'):''}</div></details>`:''}</td></tr>`).join('')}</tbody></table></section>`;
+    }).join('');
+    return `<article class="card field-card"><div class="row between"><div><span class="badge">${esc(f.group)}</span><h2>${esc(f.nome)} · ${esc(f.turno)}</h2><p><span class="radiation" aria-label="Radiologia">☢</span> ${esc(f.preceptor)}</p></div><div><p>${available} vagas/dias livres</p>${admin()?button('Nova oportunidade','op',f.id):''}</div></div><div class="days-grid">${tables}</div>${!f.slots.length?'<p class="warning">Vagas não informadas na planilha.</p>':''}<h3 style="margin-top:20px">Observações do campo</h3><p class="note">${esc(f.observacoes)||'Nenhuma observação.'}</p>${admin()?button('Editar observações','field-note',f.id):''}${admin()&&f.id==='UPA-MANHA'?button('Cadastrar vaga confirmada','new-slot',f.id):''}</article>`;
   }).join(''):'<div class="card empty">Nenhum campo disponível. A coordenação deve importar o quadro das planilhas.</div>';
 }
 function renderAttendance(){
@@ -74,7 +81,16 @@ function renderAttendance(){
 }
 function opRows(ops){return ops.map(o=>`<tr><td>${esc(o.studentName)}<small><br>${esc(o.turma)}</small></td><td>${esc(o.local||o.fieldName)}</td><td>${fmt(o.start)} a ${fmt(o.end)}<small><br>${o.days.map(d=>Domain.days[d]).join(', ')}</small></td><td>${o.dates.length*o.hours}h previstas</td><td>${button('Baixar ficha PDF','pdf',o.id)}</td></tr>`).join('');}
 function renderStudents(){
-  $('content').innerHTML=`<p>Horas da planilha CONTROLE DE HORAS já autorizadas por Yuri e Luiz compõem o saldo histórico. As novas horas só entram após o término e a autorização.</p><div class="row toolbar">${button('Cadastrar aluno','student','','primary')}${button('Nova oportunidade','op','','primary')}</div><div class="card scroll"><table><thead><tr><th>Aluno</th><th>Histórico autorizado</th><th>Novas horas autorizadas</th><th>Total autorizado</th><th>Pendentes para 400h</th><th>Ações</th></tr></thead><tbody>${students.map(s=>{const h=Domain.totalHours(approvals,s);return `<tr><td>${esc(s.nome)}<small><br>${esc(s.turma)}</small></td><td>${hoursText(Domain.historicalHours(s))}</td><td>${hoursText(Domain.approvedHours(approvals,s.id))}</td><td>${hoursText(h)}</td><td>${Math.max(0,400-h)}h</td><td>${button('Histórico','history',s.id)}</td></tr>`;}).join('')}</tbody></table></div><h2>Oportunidades cadastradas</h2><div class="card scroll"><table><thead><tr><th>Aluno</th><th>Campo</th><th>Período</th><th>Previsão</th><th>Ficha</th></tr></thead><tbody>${opRows(opportunities)}</tbody></table></div>`;
+  const focused=document.activeElement?.id==='student-search',cursor=focused?document.activeElement.selectionStart:null;
+  $('content').innerHTML=`<p>Horas da planilha CONTROLE DE HORAS já autorizadas por Yuri e Luiz compõem o saldo histórico. As novas horas só entram após o término e a autorização.</p><div class="row toolbar">${button('Cadastrar aluno','student','','primary')}${button('Nova oportunidade','op','','primary')}</div><div class="card"><div class="row toolbar"><label>Pesquisar aluno ou turma<input id="student-search" type="search" placeholder="Digite o nome ou a turma" value="${esc(studentSearch)}"></label><label>Organizar por<select id="student-order"><option value="alpha" ${studentOrder==='alpha'?'selected':''}>Ordem alfabética (A–Z)</option><option value="registration" ${studentOrder==='registration'?'selected':''}>Ordem de cadastro</option></select></label></div><p id="student-results" role="status"></p><small>Para alunos importados, a ordem de cadastro segue a ordem das linhas da planilha.</small><div class="scroll"><table><thead><tr><th>Aluno</th><th>Histórico autorizado</th><th>Novas horas autorizadas</th><th>Total autorizado</th><th>Pendentes para 400h</th><th>Ações</th></tr></thead><tbody id="student-rows"></tbody></table></div></div><h2>Oportunidades cadastradas</h2><div class="card scroll"><table><thead><tr><th>Aluno</th><th>Campo</th><th>Período</th><th>Previsão</th><th>Ficha</th></tr></thead><tbody id="student-op-rows"></tbody></table></div>`;
+  updateStudentRows();if(focused){$('student-search').focus();$('student-search').setSelectionRange(cursor,cursor);}
+}
+function updateStudentRows(){
+  const visible=Domain.orderedStudents(students,studentSearch,studentOrder),positions=new Map(visible.map((s,i)=>[s.id,i]));
+  $('student-results').textContent=`${visible.length} de ${students.length} alunos`;
+  $('student-rows').innerHTML=visible.map(s=>{const h=Domain.totalHours(approvals,s);return `<tr><td>${esc(s.nome)}<small><br>${esc(s.turma)}</small></td><td>${hoursText(Domain.historicalHours(s))}</td><td>${hoursText(Domain.approvedHours(approvals,s.id))}</td><td>${hoursText(h)}</td><td>${Math.max(0,400-h)}h</td><td>${button('Histórico','history',s.id)}</td></tr>`;}).join('')||'<tr><td colspan="6" class="empty">Nenhum aluno encontrado.</td></tr>';
+  const ops=opportunities.filter(o=>positions.has(o.studentId)).sort((a,b)=>positions.get(a.studentId)-positions.get(b.studentId));
+  $('student-op-rows').innerHTML=opRows(ops)||'<tr><td colspan="5" class="empty">Nenhuma oportunidade para os alunos exibidos.</td></tr>';
 }
 function renderExternal(){
   const historical=students.filter(s=>(s.historico||[]).some(h=>!['IOT','SESI','UPA','MEDSAUDE'].includes(h.local.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase())));
@@ -186,7 +202,9 @@ document.addEventListener('click',async e=>{
     }
   }catch(err){failure(err);}
 });
+document.addEventListener('input',e=>{if(e.target.id==='student-search'){studentSearch=e.target.value;updateStudentRows();}});
 document.addEventListener('change',e=>{
+  if(e.target.id==='student-order'){studentOrder=e.target.value;updateStudentRows();}
   if(e.target.closest('#attendance-form'))drafts.set(Domain.attendanceId(e.target.name,selectedDate),e.target.value);
   if(e.target.id==='att-field'){selectedField=e.target.value;renderAttendance();restoreDrafts();}
   if(e.target.id==='att-date'){selectedDate=e.target.value;renderAttendance();restoreDrafts();}
@@ -212,7 +230,7 @@ document.addEventListener('submit',async e=>{
     else if(form.id==='attendance-form')await saveAttendance([...new FormData(form)].map(([id,status])=>({op:opportunities.find(o=>o.id===id),date:selectedDate,status})));
     else if(form.id==='external-attendance'){mustAdmin();const f=new FormData(form);await saveAttendance([{op:opportunities.find(o=>o.id===f.get('opportunityId')),date:f.get('date'),status:f.get('status')}]);}
     else if(form.id==='import-form')await importData(form);
-    else if(form.id==='student-form'){mustAdmin();const f=new FormData(form);if(!f.get('nome').trim())throw Error('Informe o nome.');await db.collection('students').add({nome:f.get('nome').trim(),turma:f.get('turma').trim(),historico:[],horasPlanilha:null});$('dialog').close();notify('Aluno salvo no Firebase.');}
+    else if(form.id==='student-form'){mustAdmin();const f=new FormData(form);if(!f.get('nome').trim())throw Error('Informe o nome.');await db.collection('students').add({nome:f.get('nome').trim(),turma:f.get('turma').trim(),historico:[],horasPlanilha:null,createdAt:stamp()});$('dialog').close();notify('Aluno salvo no Firebase.');}
     else if(form.id==='note-form'){
       mustAdmin();const f=new FormData(form),ref=db.collection('fields').doc(f.get('fieldId'));await db.runTransaction(async tx=>{const d=await tx.get(ref);if(f.get('slotId')){const slots=d.data().slots;slots.find(s=>s.id===f.get('slotId')).obs=f.get('text');tx.update(ref,{slots});}else tx.update(ref,{observacoes:f.get('text')});});$('dialog').close();notify('Observação salva.');
     }

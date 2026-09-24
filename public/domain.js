@@ -26,11 +26,18 @@
     return {label:days<=7?'Vence em até 7 dias':days<=15?'Vence em até 15 dias':days<=30?'Vence em até 30 dias':'Ativo',days,active:true};
   }
   const attendanceId=(op,date)=>op+'_'+date;
+  const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');
+  function orderedStudents(students,query='',order='alpha'){
+    const words=normalized(query).trim().split(/\s+/).filter(Boolean);
+    const list=students.filter(s=>words.every(word=>normalized(s.nome+' '+(s.turma||'')).includes(word)));
+    const registration=s=>{const match=/^planilha-linha-(\d+)$/.exec(s.id);if(match)return [0,Number(match[1])];const time=s.createdAt?.toMillis?.()??(s.createdAt?.seconds? s.createdAt.seconds*1000:Date.parse(s.createdAt));return [1,Number.isFinite(time)?time:Number.MAX_SAFE_INTEGER];};
+    return list.sort((a,b)=>{if(order==='registration'){const x=registration(a),y=registration(b);return x[0]-y[0]||x[1]-y[1]||a.id.localeCompare(b.id,'pt-BR',{numeric:true});}return a.nome.localeCompare(b.nome,'pt-BR',{sensitivity:'base'})||a.id.localeCompare(b.id,'pt-BR',{numeric:true});});
+  }
   function loginAddress(username){
     const name=String(username).trim().toLowerCase();
     if(!['yuri','luiz','iot','sesi','upa'].includes(name))throw Error('Usuário inválido. Use yuri, luiz, iot, sesi ou upa.');
     return name+'@acesso.controle-de-estagio.invalid';
   }
-  const api={days,datesBetween,today,canAccess,approvedHours,historicalHours,totalHours,tceStatus,attendanceId,loginAddress};
+  const api={days,datesBetween,today,canAccess,approvedHours,historicalHours,totalHours,tceStatus,attendanceId,loginAddress,orderedStudents};
   if(typeof module!=='undefined') module.exports=api; else root.Domain=api;
 })(globalThis);
