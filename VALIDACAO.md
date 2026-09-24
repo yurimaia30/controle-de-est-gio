@@ -20,3 +20,11 @@
 - IAM conferido: Yuri Maia é Proprietário. Não houve alteração da permissão da conta Google.
 
 Datas ausentes na fonte permanecem pendentes para cadastro na alocação. A capacidade da UPA manhã não foi inventada: o preceptor Artur Nogueira está configurado, mas as vagas dependem de informação da coordenação.
+
+## Correção solicitada em 24/09/2026
+
+- Planilha atualizada aplicada ao Firebase com comparação de cada vaga, aluno, dia e período de IOT, SESI e UPA. MEDSAUDE não criado como campo.
+- 89 TCEs recuperados do documento anterior, com datas originais preservadas e edição pela coordenação.
+- Saldo histórico de CONTROLE DE HORAS expressamente autorizado por Yuri e Luiz: 20.819h. As novas horas continuam dependendo de encerramento e aprovação.
+- Oito testes de domínio aprovados, incluindo saldo histórico sem duplicação e limites dos alertas de TCE. Reconciliação independente da fonte e do banco real aprovada.
+- Dashboard e controle de horas conferidos no navegador contra o Firebase publicado. Cache corrigido para carregar a versão nova.

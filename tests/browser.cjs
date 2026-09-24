@@ -35,6 +35,7 @@ function mock({seed,role}){
       await page.close();
     }
     const page=await browser.newPage({viewport:{width:1400,height:1000}});await page.route('**/*',r=>r.request().url().startsWith('http://127.0.0.1:4175')?r.continue():r.fulfill({body:'',contentType:'text/javascript'}));await page.addInitScript(mock,{seed,role:{name:'Yuri Maia',role:'admin',group:null}});await page.goto('http://127.0.0.1:4175');await page.waitForSelector('[data-view="approvals"]');
+    await page.locator('[data-view="fields" ]').click();
     assert.equal(await page.locator('#content h2').count(),7);
     fs.mkdirSync('tmp',{recursive:true});await page.screenshot({path:'tmp/campos.png',fullPage:true});
     await page.locator('[data-view="attendance"]').click();await page.locator('#att-date').fill('2026-09-21');await page.locator('#att-date').dispatchEvent('change');await page.locator('[name="test-op"]').selectOption('presente');await page.locator('#attendance-form button').click();
@@ -44,3 +45,7 @@ function mock({seed,role}){
     console.log('UI simulada: três campos isolados, chamada idempotente, nenhuma hora automática e autorização nominal OK.');
   }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
+
+
+
+
