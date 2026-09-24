@@ -39,6 +39,7 @@ wait=[]
 for r in list(w['Lista de espera '].values)[1:]:
     if r[0]: wait.append(dict(nome=txt(r[0]),turma=txt(r[1]),disponibilidade=txt(r[2]),campo=txt(r[3])))
 for r in range(6,12):
+    if not upa.cell(r,12).value: continue
     wait.append(dict(nome=txt(upa.cell(r,12).value),turma=txt(upa.cell(r,13).value),disponibilidade='Noite e final de semana',campo=txt(upa.cell(r,14).value)))
 payload=dict(version=2,fields=fields,students=students,waitlist=wait)
 (root/'private/importacao-planilhas.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf8')
@@ -46,3 +47,4 @@ p=pdfplumber.open(root/'FICHA DE FREQUENCIA DE RADIOLOGIA.pdf').pages[0]
 ys=sorted(set(round(r['top'],2) for r in p.rects if abs(r['x0']-30.96)<.1 and r['height']>10))
 (root/'public/pdf-layout.json').write_text(json.dumps(dict(rows=[y for y in ys if 202<=y<620])),encoding='utf8')
 print(f'{len(students)} alunos; {len(fields)} campos; {len(wait)} espera; linhas PDF: {ys}')
+

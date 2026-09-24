@@ -15,12 +15,22 @@
   const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const canAccess=(profile,group)=>!!profile && ((profile.role==='admin'&&['Yuri Maia','Luiz Paulo'].includes(profile.name))||(profile.role==='field'&&profile.group===group));
   const approvedHours=(approvals,studentId)=>approvals.filter(a=>a.studentId===studentId).reduce((n,a)=>n+a.hours,0);
+  const historicalHours=student=>student.historicalAuthorization?.authorized===true?Number(student.horasPlanilha)||0:0;
+  const totalHours=(approvals,student)=>historicalHours(student)+approvedHours(approvals,student.id);
+  function tceStatus(tce,date=today()){
+    if(!tce.end)return {label:'Sem término',days:null,active:false};
+    const days=Math.round((Date.parse(tce.end+'T12:00:00Z')-Date.parse(date+'T12:00:00Z'))/86400000);
+    if(!Number.isFinite(days))return {label:'Data inválida',days:null,active:false};
+    if(days<0)return {label:'Vencido',days,active:false};
+    if(tce.start&&tce.start>date)return {label:'A iniciar',days,active:false};
+    return {label:days<=7?'Vence em até 7 dias':days<=15?'Vence em até 15 dias':days<=30?'Vence em até 30 dias':'Ativo',days,active:true};
+  }
   const attendanceId=(op,date)=>op+'_'+date;
   function loginAddress(username){
     const name=String(username).trim().toLowerCase();
     if(!['yuri','luiz','iot','sesi','upa'].includes(name))throw Error('Usuário inválido. Use yuri, luiz, iot, sesi ou upa.');
     return name+'@acesso.controle-de-estagio.invalid';
   }
-  const api={days,datesBetween,today,canAccess,approvedHours,attendanceId,loginAddress};
+  const api={days,datesBetween,today,canAccess,approvedHours,historicalHours,totalHours,tceStatus,attendanceId,loginAddress};
   if(typeof module!=='undefined') module.exports=api; else root.Domain=api;
 })(globalThis);

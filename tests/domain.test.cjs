@@ -25,3 +25,20 @@ test('login por usuário normaliza maiúsculas sem exigir e-mail',()=>{
   assert.equal(D.loginAddress('Yuri'),'yuri@acesso.controle-de-estagio.invalid');
   assert.throws(()=>D.loginAddress('outro'));
 });
+test('saldo histórico autorizado soma uma única vez com novas aprovações',()=>{
+  const s={id:'a',horasPlanilha:210,historico:[{horas:210}],historicalAuthorization:{authorized:true}};
+  assert.equal(D.totalHours([],s),210);
+  assert.equal(D.totalHours([{studentId:'a',hours:8},{studentId:'b',hours:100}],s),218);
+  assert.equal(D.totalHours([],{id:'b',horasPlanilha:300}),0);
+  assert.equal(D.totalHours([],{id:'c'}),0);
+});
+test('TCE: vencimento inclusivo, faixas de alerta e início futuro',()=>{
+  const status=(start,end)=>D.tceStatus({start,end},'2026-09-24');
+  assert.equal(status('2026-09-01','2026-09-23').label,'Vencido');
+  assert.deepEqual(status('2026-09-01','2026-09-24'),{label:'Vence em até 7 dias',days:0,active:true});
+  assert.equal(status('2026-09-01','2026-10-09').label,'Vence em até 15 dias');
+  assert.equal(status('2026-09-01','2026-10-24').label,'Vence em até 30 dias');
+  assert.equal(status('2026-09-01','2026-10-25').label,'Ativo');
+  assert.equal(status('2026-09-27','2026-12-13').label,'A iniciar');
+  assert.equal(status('','').label,'Sem término');
+});

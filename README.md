@@ -24,7 +24,7 @@ O login é por **usuário e senha**, sem e-mail pessoal: `yuri`, `luiz`, `iot`, 
 - Oportunidades armazenam data inicial, final, dias da semana e lista exata de datas. O PDF preenche o modelo original e repete o par de páginas a cada 27 dias; assinaturas e total de horas ficam em branco para conferência.
 - Chamadas usam IDs de oportunidade + data, sem correspondência por nome e sem duplicação ao salvar novamente. Dias futuros ou fora do período são bloqueados. A frequência não altera o saldo.
 - Horas autorizadas são a soma das autorizações, emitidas após 23:59:59 do término no fuso de Fortaleza. Cada oportunidade só pode ser autorizada uma vez. A autorização bloqueia alterações na frequência e registra o responsável.
-- Os totais antigos da planilha são referência, não autorização automática. Para validar histórico, cadastrar o período documentado, registrar suas frequências e autorizar. Isso evita incorporar horas que o código anterior creditou indevidamente.
+- Os totais de CONTROLE DE HORAS.xlsx foram expressamente autorizados por Yuri e Luiz e compõem o saldo histórico uma única vez. Novas horas exigem término da oportunidade e aprovação. O dashboard mostra os TCEs recuperados do banco anterior, vencimentos em 7/15/30 dias e ocupação dos campos.
 - Perfis dos campos só consultam documentos do próprio grupo e só escrevem frequência. Cadastros gerais, históricos externos, autorizações e dados antigos são exclusivos da coordenação.
 
 ## Verificação local
@@ -32,3 +32,4 @@ O login é por **usuário e senha**, sem e-mail pessoal: `yuri`, `luiz`, `iot`, 
 `npm test` testa datas, limites de período, isolamento lógico e saldo aprovado. `npm run serve` abre a aplicação em http://127.0.0.1:4173. Login requer Firebase configurado. Testes do PDF usam `tests/pdf-check.cjs` e a biblioteca `pdf-lib` do runtime indicado por `CODEX_NODE_MODULES`.
 
 Sistema publicado, contas criadas e regras aplicadas. Os cinco logins e o isolamento dos campos foram validados no Firebase real. As instruções de ativação acima são referência de manutenção; não é necessário recriar as contas nem importar novamente.
+

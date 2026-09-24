@@ -26,7 +26,7 @@ auth.onAuthStateChanged(async user=>{
     profile=doc.data();
     if(!['admin','field'].includes(profile.role)||(profile.role==='field'&&!['IOT','SESI','UPA'].includes(profile.group)))throw Error('Perfil inválido.');
     $('identity').textContent=profile.name+' · '+(admin()?'Coordenação':profile.group);
-    $('login').hidden=true;$('app').hidden=false;view='fields';
+    $('login').hidden=true;$('app').hidden=false;view=admin()?'dashboard':'fields';
     watch('fields',v=>fields=v);watch('opportunities',v=>opportunities=v);watch('attendance',v=>attendance=v);
     if(admin()){watch('students',v=>students=v,false);watch('approvals',v=>approvals=v,false);watch('settings',v=>settings=Object.fromEntries(v.map(x=>[x.id,x])),false);}
     render();
@@ -35,16 +35,31 @@ auth.onAuthStateChanged(async user=>{
 $('login-form').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target);$('login-error').textContent='';const submit=e.target.querySelector('button');submit.disabled=true;try{await auth.signInWithEmailAndPassword(Domain.loginAddress(f.get('username')),f.get('password'));e.target.reset();}catch(err){$('login-error').textContent='Não foi possível entrar. Confira usuário e senha ou solicite a ativação à coordenação.';}finally{submit.disabled=false;}});
 $('password-help').onclick=()=>{$('login-error').textContent='Solicite a redefinição da senha à coordenação. Este acesso não utiliza e-mail pessoal.';};
 $('logout').onclick=()=>auth.signOut();$('close-dialog').onclick=()=>$('dialog').close();
-const views={fields:'Campos e vagas',attendance:'Chamada por campo',students:'Alunos e horas',external:'Estágios externos',approvals:'Autorizar horas',waitlist:'Lista de espera',setup:'Importar planilhas'};
+const views={dashboard:'Dashboard',tces:'Controle de TCEs',fields:'Campos e vagas',attendance:'Chamada por campo',students:'Controle de horas',external:'Estágios externos',approvals:'Autorizar horas',waitlist:'Lista de espera',setup:'Importar planilhas'};
 function render(){
   if(!profile)return;
   const allowed=admin()?Object.keys(views):['fields','attendance'];if(!allowed.includes(view))view='fields';
   $('nav').innerHTML=allowed.map(v=>`<button class="${v===view?'active':''}" data-view="${v}">${views[v]}</button>`).join('');
   $('page-title').textContent=views[view];
-  ({fields:renderFields,attendance:renderAttendance,students:renderStudents,external:renderExternal,approvals:renderApprovals,waitlist:renderWaitlist,setup:renderSetup}[view])();
+  ({dashboard:renderDashboard,tces:renderTces,fields:renderFields,attendance:renderAttendance,students:renderStudents,external:renderExternal,approvals:renderApprovals,waitlist:renderWaitlist,setup:renderSetup}[view])();
   restoreDrafts();
 }
 function restoreDrafts(){document.querySelectorAll('#attendance-form select').forEach(select=>{const value=drafts.get(Domain.attendanceId(select.name,selectedDate));if(value)select.value=value;});}
+const tces=()=>Object.values(settings).filter(s=>s.type==='tce');
+const hoursText=n=>Number(n).toLocaleString('pt-BR')+'h';
+function tceRows(items){return items.map(t=>{const s=Domain.tceStatus(t);return `<tr><td>${esc(t.studentName)}</td><td>${esc(t.number)||'—'}</td><td>${esc(t.fieldName)||'—'}</td><td>${fmt(t.start)} a ${fmt(t.end)}</td><td class="${s.label==='Vencido'?'expired':s.days!==null&&s.days<=30?'warning':'good'}">${s.label}${s.days===0?' · hoje':''}</td><td>${button('Editar TCE','tce',t.id)}</td></tr>`;}).join('');}
+function tceTable(items){return `<div class="card scroll"><table><thead><tr><th>Aluno</th><th>TCE</th><th>Campo</th><th>Vigência</th><th>Situação</th><th>Ação</th></tr></thead><tbody>${tceRows(items)||'<tr><td colspan="6">Nenhum TCE nesta situação.</td></tr>'}</tbody></table></div>`;}
+function renderDashboard(){
+  mustAdmin();const contracts=tces(),states=contracts.map(t=>Domain.tceStatus(t)),totals=students.map(s=>Domain.totalHours(approvals,s));
+  const stat=(label,value)=>`<article class="card"><small>${label}</small><div class="stat">${value}</div></article>`;
+  const alerts=contracts.filter(t=>{const s=Domain.tceStatus(t);return s.days!==null&&s.days<=30;}).sort((a,b)=>a.end.localeCompare(b.end));
+  $('content').innerHTML=`<p>Dados do Firebase. As horas históricas da planilha foram autorizadas por Yuri e Luiz; novas horas entram somente após o encerramento e aprovação.</p><div class="kpis">${stat('Alunos com menos de 400h',totals.filter(h=>h<400).length)}${stat('Alunos com 400h ou mais',totals.filter(h=>h>=400).length)}${stat('Horas autorizadas',hoursText(totals.reduce((a,b)=>a+b,0)))}${stat('Horas pendentes para 400h',hoursText(totals.reduce((a,b)=>a+Math.max(0,400-b),0)))}</div><h2>Vigência dos TCEs</h2><div class="kpis">${stat('TCEs ativos',states.filter(s=>s.active).length)}${stat('Vencem em até 30 dias',states.filter(s=>s.active&&s.days<=30).length)}${stat('Vencem em até 15 dias',states.filter(s=>s.active&&s.days<=15).length)}${stat('Vencem em até 7 dias',states.filter(s=>s.active&&s.days<=7).length)}${stat('TCEs vencidos',states.filter(s=>s.label==='Vencido').length)}${stat('TCEs a iniciar',states.filter(s=>s.label==='A iniciar').length)}</div><p>As faixas de 7, 15 e 30 dias se sobrepõem. O TCE permanece ativo no dia do vencimento.</p><h2>Situação dos campos</h2><div class="grid">${fields.map(f=>{const usable=f.slots.filter(s=>!s.bloqueada),used=usable.filter(s=>s.aluno).length;return `<article class="card"><h3>${esc(f.nome)} · ${esc(f.turno)}</h3><p>☢ ${esc(f.preceptor)}</p><strong>${used} ocupadas · ${usable.length-used} livres</strong><p>${usable.length} vagas/dias disponíveis · ${f.slots.length-usable.length} bloqueadas</p>${!usable.length?'<p class="warning">Capacidade ainda não informada.</p>':`<progress value="${used}" max="${usable.length}" aria-label="Ocupação de ${esc(f.nome)}"></progress>`}<button data-view="fields" class="secondary">Ver quadro</button></article>`;}).join('')}</div><h2>Alertas de vencimento</h2>${tceTable(alerts)}<h2>Alunos próximos de 400h</h2><div class="card">${students.filter(s=>{const h=Domain.totalHours(approvals,s);return h>=360&&h<400;}).map(s=>`<p>${esc(s.nome)} · ${hoursText(Domain.totalHours(approvals,s))} / 400h</p>`).join('')||'<p>Nenhum aluno entre 360h e 400h.</p>'}</div>`;
+}
+function renderTces(){mustAdmin();$('content').innerHTML=`<p>TCEs recuperados do cadastro anterior e novos registros da coordenação. Editar a vigência do TCE não altera as datas das oportunidades nem autoriza horas.</p><div class="toolbar">${button('Cadastrar TCE','tce','','primary')}</div>${tceTable(tces().sort((a,b)=>(a.end||'9999').localeCompare(b.end||'9999')))}`;}
+function tceModal(id){
+  mustAdmin();const t=settings[id]||{};
+  modal(`<h2>${id?'Editar':'Cadastrar'} TCE</h2><form id="tce-form"><input type="hidden" name="id" value="${esc(id)}"><label>Aluno<input name="studentName" list="student-names" value="${esc(t.studentName)}" required><datalist id="student-names">${students.map(s=>`<option value="${esc(s.nome)}"></option>`).join('')}</datalist></label><label>Número do TCE<input name="number" value="${esc(t.number)}"></label><label>Campo ou instituição<input name="fieldName" list="field-names" value="${esc(t.fieldName)}" required><datalist id="field-names">${fields.map(f=>`<option value="${esc(f.nome)}"></option>`).join('')}</datalist></label><div class="form-grid"><label>Início<input type="date" name="start" value="${esc(t.start)}" required></label><label>Término<input type="date" name="end" value="${esc(t.end)}" required></label></div><button>Salvar TCE</button></form>`);
+}
 function renderFields(){
   $('content').innerHTML=fields.length?fields.map(f=>{
     const available=f.slots.filter(s=>!s.bloqueada&&!s.aluno).length;
@@ -59,7 +74,7 @@ function renderAttendance(){
 }
 function opRows(ops){return ops.map(o=>`<tr><td>${esc(o.studentName)}<small><br>${esc(o.turma)}</small></td><td>${esc(o.local||o.fieldName)}</td><td>${fmt(o.start)} a ${fmt(o.end)}<small><br>${o.days.map(d=>Domain.days[d]).join(', ')}</small></td><td>${o.dates.length*o.hours}h previstas</td><td>${button('Baixar ficha PDF','pdf',o.id)}</td></tr>`).join('');}
 function renderStudents(){
-  $('content').innerHTML=`<p>Horas da planilha são exibidas como histórico de referência. Só autorizações explícitas entram no saldo validado.</p><div class="row toolbar">${button('Cadastrar aluno','student','','primary')}${button('Nova oportunidade','op','','primary')}</div><div class="card scroll"><table><thead><tr><th>Aluno</th><th>Horas na planilha</th><th>Horas autorizadas</th><th>Pendentes para 400h</th><th>Ações</th></tr></thead><tbody>${students.map(s=>{const h=Domain.approvedHours(approvals,s.id);return `<tr><td>${esc(s.nome)}<small><br>${esc(s.turma)}</small></td><td>${s.horasPlanilha??'—'}</td><td>${h}h</td><td>${Math.max(0,400-h)}h</td><td>${button('Histórico','history',s.id)}</td></tr>`;}).join('')}</tbody></table></div><h2>Oportunidades cadastradas</h2><div class="card scroll"><table><thead><tr><th>Aluno</th><th>Campo</th><th>Período</th><th>Previsão</th><th>Ficha</th></tr></thead><tbody>${opRows(opportunities)}</tbody></table></div>`;
+  $('content').innerHTML=`<p>Horas da planilha CONTROLE DE HORAS já autorizadas por Yuri e Luiz compõem o saldo histórico. As novas horas só entram após o término e a autorização.</p><div class="row toolbar">${button('Cadastrar aluno','student','','primary')}${button('Nova oportunidade','op','','primary')}</div><div class="card scroll"><table><thead><tr><th>Aluno</th><th>Histórico autorizado</th><th>Novas horas autorizadas</th><th>Total autorizado</th><th>Pendentes para 400h</th><th>Ações</th></tr></thead><tbody>${students.map(s=>{const h=Domain.totalHours(approvals,s);return `<tr><td>${esc(s.nome)}<small><br>${esc(s.turma)}</small></td><td>${hoursText(Domain.historicalHours(s))}</td><td>${hoursText(Domain.approvedHours(approvals,s.id))}</td><td>${hoursText(h)}</td><td>${Math.max(0,400-h)}h</td><td>${button('Histórico','history',s.id)}</td></tr>`;}).join('')}</tbody></table></div><h2>Oportunidades cadastradas</h2><div class="card scroll"><table><thead><tr><th>Aluno</th><th>Campo</th><th>Período</th><th>Previsão</th><th>Ficha</th></tr></thead><tbody>${opRows(opportunities)}</tbody></table></div>`;
 }
 function renderExternal(){
   const historical=students.filter(s=>(s.historico||[]).some(h=>!['IOT','SESI','UPA','MEDSAUDE'].includes(h.local.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase())));
@@ -73,7 +88,7 @@ function renderApprovals(){
 }
 function renderWaitlist(){const list=settings.waitlist?.items||[];$('content').innerHTML=`<div class="card"><p>Dados preservados da planilha. Preferências ambíguas permanecem como na origem.</p><table><thead><tr><th>Nome</th><th>Turma</th><th>Disponibilidade</th><th>Campo / grupo</th></tr></thead><tbody>${list.map(s=>`<tr><td>${esc(s.nome)}</td><td>${esc(s.turma)}</td><td>${esc(s.disponibilidade)}</td><td>${esc(s.campo)||'—'}</td></tr>`).join('')}</tbody></table></div>`;}
 function renderSetup(){
-  $('content').innerHTML=`<article class="card"><h2>Quadro conferido com as planilhas</h2><p>Selecione o arquivo <strong>importacao-planilhas.json</strong> entregue na pasta private. A importação cria somente registros ausentes; não substitui dados já cadastrados.</p><p>MEDSAUDE não será criado como campo. O histórico original de horas permanece disponível para conferência, sem autorização automática.</p><form id="import-form"><input type="file" name="file" accept="application/json,.json" required><button>Importar dados conferidos</button></form></article><article class="card"><h3>Dados anteriores do Firebase</h3><p>O documento antigo permanece preservado. Exporte uma cópia para conferir registros anteriores antes de migrar oportunidades.</p>${button('Baixar cópia do banco anterior','legacy')}</article>`;
+  $('content').innerHTML=`<article class="card"><h2>Quadro conferido com as planilhas</h2><p>Selecione o arquivo <strong>importacao-planilhas.json</strong> entregue na pasta private. A importação cria somente registros ausentes; não substitui dados já cadastrados.</p><p>MEDSAUDE não será criado como campo. O histórico de CONTROLE DE HORAS foi autorizado por Yuri e Luiz. Novas oportunidades continuam exigindo encerramento e aprovação.</p><form id="import-form"><input type="file" name="file" accept="application/json,.json" required><button>Importar dados conferidos</button></form></article><article class="card"><h3>Dados anteriores do Firebase</h3><p>O documento antigo permanece preservado. Exporte uma cópia para conferir registros anteriores antes de migrar oportunidades.</p>${button('Baixar cópia do banco anterior','legacy')}</article>`;
 }
 function opModal(fieldId='',slotId=''){
   mustAdmin();const f=fields.find(f=>f.id===fieldId), slot=f?.slots.find(s=>s.id===slotId);
@@ -151,6 +166,7 @@ document.addEventListener('click',async e=>{
   const action=target.dataset.action,id=target.dataset.id;if(!action)return;
   try{
     if(action==='password')modal('<h2>Alterar minha senha</h2><form id="password-form"><label>Senha atual<input name="current" type="password" autocomplete="current-password" required></label><label>Nova senha (mínimo 12 caracteres)<input name="next" type="password" minlength="12" autocomplete="new-password" required></label><label>Repita a nova senha<input name="confirm" type="password" minlength="12" autocomplete="new-password" required></label><button>Alterar senha</button></form>');
+    else if(action==='tce')tceModal(id);
     else if(action==='op')opModal(id);
     else if(action==='slot'){const [f,s]=id.split('|');opModal(f,s);}
     else if(action==='pdf'){const op=opportunities.find(o=>o.id===id);if(!op||!accessible(op.group))throw Error('Oportunidade indisponível.');await downloadFicha(op);}
@@ -162,7 +178,7 @@ document.addEventListener('click',async e=>{
     }
     else if(action==='student'){mustAdmin();modal('<h2>Cadastrar aluno</h2><form id="student-form"><label>Nome completo<input name="nome" required></label><label>Turma<input name="turma" required></label><button>Salvar aluno</button></form>');}
     else if(action==='history'){
-      mustAdmin();const s=students.find(s=>s.id===id);modal(`<h2>${esc(s.nome)}</h2><p>${esc(s.fonte||'Cadastro manual')}</p><p>Histórico original de referência; não representa autorização de horas.</p><table><tr><th>Local</th><th>Período</th><th>Horas</th></tr>${(s.historico||[]).map(h=>`<tr><td>${esc(h.local)}</td><td>${esc(h.periodo)}</td><td>${h.horas}</td></tr>`).join('')}</table>`);
+      mustAdmin();const s=students.find(s=>s.id===id);modal(`<h2>${esc(s.nome)}</h2><p>${esc(s.fonte||'Cadastro manual')}</p><p>Histórico da planilha CONTROLE DE HORAS, autorizado por Yuri e Luiz. O total da planilha é contabilizado uma única vez, sem somar novamente cada linha do histórico.</p><table><tr><th>Local</th><th>Período</th><th>Horas</th></tr>${(s.historico||[]).map(h=>`<tr><td>${esc(h.local)}</td><td>${esc(h.periodo)}</td><td>${h.horas}</td></tr>`).join('')}</table>`);
     }
     else if(action==='new-slot'){mustAdmin();modal(`<h2>Vaga da UPA Manhã</h2><p>A quantidade não consta na planilha. Cadastre apenas uma vaga confirmada.</p><form id="new-slot-form"><label>Número da vaga<input type="number" name="number" min="1" required></label><div class="days">${Domain.days.map((d,i)=>`<label><input type="checkbox" name="days" value="${i}">${d}</label>`).join('')}</div><button>Cadastrar vaga</button></form>`);}
     else if(action==='legacy'){
@@ -184,6 +200,14 @@ document.addEventListener('submit',async e=>{
       const f=new FormData(form);if(f.get('next')!==f.get('confirm'))throw Error('As novas senhas não coincidem.');if(f.get('next').length<12)throw Error('Use pelo menos 12 caracteres.');
       const credential=firebase.auth.EmailAuthProvider.credential(auth.currentUser.email,f.get('current'));await auth.currentUser.reauthenticateWithCredential(credential);await auth.currentUser.updatePassword(f.get('next'));form.reset();$('dialog').close();notify('Senha alterada.');
     }
+    else if(form.id==='tce-form'){
+      mustAdmin();const f=new FormData(form),start=f.get('start'),end=f.get('end');Domain.datesBetween(start,end,[0,1,2,3,4,5,6]);
+      const id=f.get('id'),ref=id?db.collection('settings').doc(id):db.collection('settings').doc();
+      if(id&&settings[id]?.type!=='tce')throw Error('TCE indisponível.');
+      const value={type:'tce',studentName:f.get('studentName').trim(),number:f.get('number').trim(),fieldName:f.get('fieldName').trim(),start,end,updatedBy:profile.name,updatedAt:stamp()};
+      if(!value.studentName||!value.fieldName)throw Error('Informe aluno e campo.');
+      await ref.set(value,{merge:true});$('dialog').close();notify('TCE salvo. Dashboard atualizado.');
+    }
     else if(form.id==='op-form')await saveOp(form);
     else if(form.id==='attendance-form')await saveAttendance([...new FormData(form)].map(([id,status])=>({op:opportunities.find(o=>o.id===id),date:selectedDate,status})));
     else if(form.id==='external-attendance'){mustAdmin();const f=new FormData(form);await saveAttendance([{op:opportunities.find(o=>o.id===f.get('opportunityId')),date:f.get('date'),status:f.get('status')}]);}
@@ -197,3 +221,4 @@ document.addEventListener('submit',async e=>{
     }
   }catch(err){failure(err);}finally{if(submit)submit.disabled=false;}
 });
+

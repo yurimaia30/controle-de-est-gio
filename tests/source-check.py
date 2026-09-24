@@ -14,9 +14,14 @@ for name in ['IOT','SESI']:
             expected.append((int(row[2]),i+1,v))
     actual=[(s['vaga'],s['dias'][0],'X' if s['bloqueada'] else s['aluno']) for s in fields[name]['slots']]
     assert actual==expected
-assert [s['vaga'] for s in fields['UPA-G1']['slots'] if not s['aluno']]==[3,4]
-assert fields['UPA-G4']['slots'][0]['inicio']=='2026-08-30'
-assert fields['UPA-G4']['slots'][2]['aluno']=='Frank Bruno'
+for group,start,col in [(1,6,2),(2,6,7),(3,14,2),(4,14,7)]:
+    for offset,slot in enumerate(fields[f'UPA-G{group}']['slots']):
+        row=start+offset
+        assert slot['vaga']==w['UPA'].cell(row,col).value
+        assert slot['aluno']==str(w['UPA'].cell(row,col+1).value or '').strip()
+        for attr,dc in [('inicio',2),('fim',3)]:
+            v=w['UPA'].cell(row,col+dc).value
+            assert slot[attr]==(v.date().isoformat() if v else '')
 assert fields['UPA-MANHA']['slots']==[]
 assert fields['UPA-MANHA']['preceptor']=='Artur Nogueira'
 for f in fields.values():
@@ -24,4 +29,8 @@ for f in fields.values():
         if f['id'].startswith('UPA-G') and s['aluno'] not in ['Brenda Kely','Antonio Vieira','Jackson - RAD19','Ellen Eduarda']:
             assert s['inicio']==s['fim']==''
 assert len(data['waitlist'])==13
+hours=openpyxl.load_workbook(root/'CONTROLE DE HORAS.xlsx',data_only=True).active
+for s in data['students']:
+    row=int(s['id'].split('-')[-1])
+    assert s['horasPlanilha']==hours.cell(row,20).value
 print('89 alunos, vagas célula a célula IOT/SESI, UPA, datas ausentes e lista de espera: OK')
