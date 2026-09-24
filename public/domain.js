@@ -15,7 +15,7 @@
   const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const canAccess=(profile,group)=>!!profile && ((profile.role==='admin'&&['Yuri Maia','Luiz Paulo'].includes(profile.name))||(profile.role==='field'&&profile.group===group));
   const approvedHours=(approvals,studentId)=>approvals.filter(a=>a.studentId===studentId).reduce((n,a)=>n+a.hours,0);
-  const historicalHours=student=>student.historicalAuthorization?.authorized===true?Number(student.horasPlanilha)||0:0;
+  const historicalHours=student=>(student.historicalAuthorization?.authorized===true?Number(student.horasPlanilha)||0:0)+Object.values(student.horasAntigas||{}).reduce((sum,entry)=>sum+(Number.isFinite(entry.hours)&&entry.hours>0?entry.hours:0),0);
   const totalHours=(approvals,student)=>historicalHours(student)+approvedHours(approvals,student.id);
   function tceStatus(tce,date=today()){
     if(!tce.end)return {label:'Sem término',days:null,active:false};
