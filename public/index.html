@@ -1,15 +1,468 @@
-<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estágios de Radiologia · Grau Técnico</title>
-<link rel="stylesheet" href="style.css?v=20260924-3">
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Vagas - Radiologia | Grau Educacional Mossoró</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  
+  
+  
+  
+  
+  <style>
+    :root {
+      --bg-main: #070c18;
+      --bg-card: #0f172a;
+      --bg-card-hover: #17233d;
+      --bg-surface: #1e293b;
+      --bg-input: #090f1f;
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-focus: #06b6d4;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --cyan-accent: #06b6d4;
+      --emerald-accent: #10b981;
+      --grau-green: #8bc34a;
+      --amber-accent: #f59e0b;
+      --rose-accent: #f43f5e;
+      --purple-accent: #8b5cf6;
+      --blue-accent: #3b82f6;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 22px;
+      --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    }
+    [hidden] { display: none !important; }
+    .attendance-item label { margin-left: 14px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+    aside.sidebar {
+      width: 285px;
+      background: linear-gradient(180deg, #0b1222 0%, #060913 100%);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      padding: 22px 16px;
+      position: fixed;
+      height: 100vh;
+      z-index: 50;
+    }
+    .brand-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 6px 8px 18px 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 18px;
+      align-items: center;
+      text-align: center;
+    }
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-sub {
+      font-size: 0.72rem;
+      color: var(--grau-green);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.04); color: #fff; }
+    .nav-btn.active {
+      background: linear-gradient(90deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.03) 100%);
+      color: var(--cyan-accent);
+      border-left: 3px solid var(--cyan-accent);
+    }
+    .user-pill {
+      padding: 12px 14px;
+      background: rgba(6, 182, 212, 0.07);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(6, 182, 212, 0.22);
+      margin-top: 10px;
+    }
+    .user-select {
+      width: 100%;
+      background: #0b1329;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+    .user-badge-role {
+      font-size: 0.70rem;
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      margin-top: 4px;
+      color: var(--cyan-accent);
+      font-weight: 600;
+    }
+    .developer-footer {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: auto;
+      padding-top: 14px;
+      padding-bottom: 4px;
+    }
+    main.content-area {
+      margin-left: 285px;
+      flex: 1;
+      padding: 30px 40px;
+      max-width: 1650px;
+      overflow-y: auto;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .page-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .page-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.35);
+    }
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .kpi-section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .kpi-grid-main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .kpi-grid-tces {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; }
+    .kpi-card.cyan::before { background: var(--cyan-accent); }
+    .kpi-card.emerald::before { background: var(--emerald-accent); }
+    .kpi-card.amber::before { background: var(--amber-accent); }
+    .kpi-card.purple::before { background: var(--purple-accent); }
+    .kpi-card.blue::before { background: var(--blue-accent); }
+    .kpi-card.rose::before { background: var(--rose-accent); }
+    .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .kpi-label { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); }
+    .kpi-val { font-size: 1.7rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #fff; }
+    .kpi-hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+    .field-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-card);
+    }
+    .field-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .field-badge {
+      display: inline-flex;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-iot { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-sesi { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-upa { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-upa-manha { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-externo { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .table-toolbar {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .search-box { position: relative; flex: 1; max-width: 380px; }
+    .search-box input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 9px 14px 9px 36px;
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-size: 0.85rem;
+    }
+    .search-box input:focus { outline: none; border-color: var(--cyan-accent); }
+    .search-box svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px; height: 16px; }
+    table.data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    table.data-table th {
+      background: rgba(15, 23, 42, 0.7);
+      padding: 13px 18px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    table.data-table td {
+      padding: 13px 18px;
+      font-size: 0.84rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+    .progress-bar-bg { width: 115px; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 6px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #06b6d4, #10b981); }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .status-active { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+    .status-complete { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); }
+    .tce-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.70rem;
+      font-weight: 700;
+    }
+    .tce-vigente { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+    .tce-renovar { background: rgba(139, 92, 246, 0.15); color: #c084fc; }
+    .tce-vencendo { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .tce-vencido { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .icon-btn:hover { color: #fff; border-color: var(--cyan-accent); }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex !important; }
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      padding: 18px 24px;
+      background: rgba(15, 23, 42, 0.7);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body { padding: 22px 24px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.col-span-2 { grid-column: span 2; }
+    .form-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); }
+    .form-input, .form-select {
+      background: var(--bg-input);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      color: #fff;
+      font-size: 0.88rem;
+    }
+    .modal-footer {
+      padding: 16px 24px;
+      background: rgba(15, 23, 42, 0.6);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .view-content { display: none; }
+    .view-content.active { display: block; }
+    .slot-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .slot-obs-input {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      color: #cbd5e1;
+      font-size: 0.72rem;
+      padding: 4px 6px;
+      width: 100%;
+    }
+    .cloud-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+    .cloud-status.online { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .attendance-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+  </style>
+<link rel="stylesheet" href="integration.css?v=20260924-local">
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="domain.js?v=20260924-3"></script><script src="ficha.js?v=20260924-3"></script><script defer src="app.js?v=20260924-3"></script></head>
-<body>
-<section id="login" class="login card"><img src="logo.jpg" alt="Grau Técnico" width="110"><h1>Estágios de Radiologia</h1><p>Acesse com seu usuário: yuri, luiz, iot, sesi ou upa.</p><form id="login-form"><label>Usuário<input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required></label><label>Senha<input name="password" type="password" autocomplete="current-password" required></label><button>Entrar</button><button type="button" id="password-help" class="secondary">Esqueci minha senha</button></form><p id="login-error" role="alert"></p></section>
-<div id="app" hidden><aside><img src="logo.jpg" alt="Grau Técnico" width="100"><h2>Radiologia</h2><p id="identity"></p><nav id="nav"></nav><button data-action="password" class="secondary">Alterar senha</button><button id="logout" class="secondary">Sair</button><small id="connection">Conectando ao Firebase…</small></aside><main><header><div><small>GRAU EDUCACIONAL · MOSSORÓ</small><h1 id="page-title">Campos de estágio</h1></div></header><p id="message" role="status" hidden></p><section id="content"></section></main></div>
-<dialog id="dialog"><div id="dialog-content"></div><button id="close-dialog" class="secondary">Fechar</button></dialog>
+<script src="domain.js?v=20260924-local"></script>
+<script src="core.js"></script><script src="pdf-template.js"></script><script src="pdf.js"></script>
+<script defer src="app.js?v=20260924-local"></script><script defer src="interface.js?v=20260924-local"></script>
+</head><body>
+<section id="login" class="login-screen"><div class="field-card login-card"><div class="brand-title">☢ RADCONTROL</div><p class="brand-sub">Grau Educacional Mossoró</p><h1>Acessar sistema</h1><p>Informe seu usuário e senha.</p><form id="login-form"><label>Usuário<input name="username" autocomplete="username" required></label><label>Senha<input name="password" type="password" autocomplete="current-password" required></label><button class="btn btn-primary">Entrar</button><button id="password-help" type="button" class="btn btn-secondary">Esqueci minha senha</button></form><p id="login-error" role="alert"></p></div></section>
+<div id="app" hidden><aside class="sidebar"><div class="brand-container">
+      <div class="brand-title">
+        <span style="color:var(--amber-accent);font-size:26px">☢</span>
+        <span>RADCONTROL</span>
+      </div>
+      <div class="brand-sub">Grau Educacional Mossoró</div>
+    </div>
+
+    <nav id="nav" class="nav-links" aria-label="Menu principal"></nav><div class="user-pill"><strong id="identity"></strong><span id="connection" class="cloud-status online">Conectando ao Firebase…</span><div class="row"><button data-action="password" class="btn btn-secondary">Alterar senha</button><button id="logout" class="btn btn-secondary">Sair</button></div></div><div class="developer-footer">Desenvolvido por<br><strong>Yuri Maia</strong></div></aside>
+<main class="content-area"><header class="topbar"><div><p class="brand-sub">Grau Educacional Mossoró</p><h1 id="page-title" class="page-title">Dashboard Principal</h1><p id="page-subtitle" class="page-subtitle"></p></div></header><p id="message" class="notice" role="status" hidden></p><section id="content"></section></main></div>
+<dialog id="dialog"><div id="dialog-content"></div><div class="dialog-footer"><button id="close-dialog" class="btn btn-secondary">Fechar</button></div></dialog>
 </body></html>
-
-

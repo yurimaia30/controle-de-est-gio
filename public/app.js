@@ -36,14 +36,14 @@ auth.onAuthStateChanged(async user=>{
 $('login-form').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target);$('login-error').textContent='';const submit=e.target.querySelector('button');submit.disabled=true;try{await auth.signInWithEmailAndPassword(Domain.loginAddress(f.get('username')),f.get('password'));e.target.reset();}catch(err){$('login-error').textContent='Não foi possível entrar. Confira usuário e senha ou solicite a ativação à coordenação.';}finally{submit.disabled=false;}});
 $('password-help').onclick=()=>{$('login-error').textContent='Solicite a redefinição da senha à coordenação. Este acesso não utiliza e-mail pessoal.';};
 $('logout').onclick=()=>auth.signOut();$('close-dialog').onclick=()=>$('dialog').close();
-const views={dashboard:'Dashboard',tces:'Controle de TCEs',fields:'Campos e vagas',attendance:'Chamada por campo',students:'Controle de horas',external:'Estágios externos',approvals:'Autorizar horas',waitlist:'Lista de espera',setup:'Importar planilhas'};
+const views={dashboard:'Dashboard',tces:'Controle de TCEs',fields:'Campos e vagas',attendance:'Chamada por campo',students:'Controle de horas',external:'Estágios externos',approvals:'Autorizar horas',waitlist:'Lista de espera',setup:'Importar planilhas',preceptors:'Preceptores'};
 function render(){
   if(!profile)return;
   const allowed=admin()?Object.keys(views):['fields','attendance'];if(!allowed.includes(view))view='fields';
-  $('nav').innerHTML=allowed.map(v=>`<button class="${v===view?'active':''}" data-view="${v}">${views[v]}</button>`).join('');
+  $('nav').innerHTML=allowed.map(v=>`<button class="${v===view?'active':''} nav-btn" data-view="${v}">${views[v]}</button>`).join('');
   $('page-title').textContent=views[view];
-  ({dashboard:renderDashboard,tces:renderTces,fields:renderFields,attendance:renderAttendance,students:renderStudents,external:renderExternal,approvals:renderApprovals,waitlist:renderWaitlist,setup:renderSetup}[view])();
-  restoreDrafts();
+  ({dashboard:renderDashboard,tces:renderTces,fields:renderFields,attendance:renderAttendance,students:renderStudents,external:renderExternal,approvals:renderApprovals,waitlist:renderWaitlist,setup:renderSetup,preceptors:renderPreceptors}[view])();
+  restoreDrafts(); decorateInterface();
 }
 function restoreDrafts(){document.querySelectorAll('#attendance-form select').forEach(select=>{const value=drafts.get(Domain.attendanceId(select.name,selectedDate));if(value)select.value=value;});}
 const tces=()=>Object.values(settings).filter(s=>s.type==='tce');

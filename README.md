@@ -33,3 +33,13 @@ O login é por **usuário e senha**, sem e-mail pessoal: `yuri`, `luiz`, `iot`, 
 
 Sistema publicado, contas criadas e regras aplicadas. Os cinco logins e o isolamento dos campos foram validados no Firebase real. As instruções de ativação acima são referência de manutenção; não é necessário recriar as contas nem importar novamente.
 
+
+## Versão publicada em 24/09/2026
+
+A pasta `public/` contém a interface local preservada e publicada pelo Cloud Shell: dashboard, quadro de vagas em matriz, chamadas por campo e ficha baseada no PDF original. O código mantém a integração com os perfis e dados existentes no Firebase.
+
+Para atualizar somente o aplicativo, execute `bash publicar.sh` em um terminal com acesso ao projeto. Não é necessário recriar usuários ou importar os alunos. O envio de commits ao GitHub, por si só, não publica no Firebase.
+
+O gerador ativo é `pdf.js`, com o modelo em `pdf-template.js` e adaptação em `interface.js`. Ele usa o período e os dias cadastrados, repete a página de frequência a cada 27 datas e inclui a página final de instruções. Os arquivos antigos `ficha.js` e seu teste são mantidos como histórico e não representam o gerador ativo.
+
+Validação desta integração: oito testes de domínio aprovados; testes locais com Firebase simulado para os cinco perfis, dashboard, quadro de vagas, observações e largura de celular aprovados antes da publicação.
