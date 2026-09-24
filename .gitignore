@@ -1,0 +1,17 @@
+node_modules/
+private/
+tmp/
+*.log
+.firebase/
+modelo-preview.png
+
+*.xlsx
+*.xls
+*.csv
+*.tsv
+.env
+.env.*
+*service-account*.json
+*serviceAccount*.json
+ACESSOS*
+senhas-*
