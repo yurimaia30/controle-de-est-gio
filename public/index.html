@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estágios de Radiologia · Grau Técnico</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20260924-2">
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="domain.js"></script><script src="ficha.js"></script><script defer src="app.js"></script></head>
+<script src="domain.js?v=20260924-2"></script><script src="ficha.js?v=20260924-2"></script><script defer src="app.js?v=20260924-2"></script></head>
 <body>
 <section id="login" class="login card"><img src="logo.jpg" alt="Grau Técnico" width="110"><h1>Estágios de Radiologia</h1><p>Acesse com seu usuário: yuri, luiz, iot, sesi ou upa.</p><form id="login-form"><label>Usuário<input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required></label><label>Senha<input name="password" type="password" autocomplete="current-password" required></label><button>Entrar</button><button type="button" id="password-help" class="secondary">Esqueci minha senha</button></form><p id="login-error" role="alert"></p></section>
 <div id="app" hidden><aside><img src="logo.jpg" alt="Grau Técnico" width="100"><h2>Radiologia</h2><p id="identity"></p><nav id="nav"></nav><button data-action="password" class="secondary">Alterar senha</button><button id="logout" class="secondary">Sair</button><small id="connection">Conectando ao Firebase…</small></aside><main><header><div><small>GRAU EDUCACIONAL · MOSSORÓ</small><h1 id="page-title">Campos de estágio</h1></div></header><p id="message" role="status" hidden></p><section id="content"></section></main></div>
 <dialog id="dialog"><div id="dialog-content"></div><button id="close-dialog" class="secondary">Fechar</button></dialog>
 </body></html>
+
