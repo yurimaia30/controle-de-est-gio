@@ -1,8 +1,10 @@
 'use strict';
 const TCE_GROUPS=['UPA','IOT','SESI'];
+const TCE_PRECEPTORS={IOT:'Francisco Daniel Santana',SESI:'Erick Douglas Araújo de Carvalho'};
 const tceXml=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 const tceDate=value=>value.split('-').reverse().join('/');
 function tceValues(op,data){
+  data={...data,preceptor:TCE_PRECEPTORS[op.group]||data.preceptor};
   if(!TCE_GROUPS.includes(op.group))throw Error('Ainda não há modelo de TCE para este campo.');
   const required=['nome','matricula','rg','cpf','preceptor','crtr','turno','horario','apolice','seguroInicio','seguroFim','assinatura'];
   for(const key of required)if(!String(data[key]||'').trim())throw Error('Preencha todos os dados obrigatórios do TCE.');
@@ -36,13 +38,15 @@ function automaticTceModal(id){
   const student=students.find(s=>s.id===op.studentId),saved=settings['tce-op-'+id];
   const defaults=settings['tce-defaults-'+op.fieldId]?.data||{};
   const data={...defaults,...(student?.tceIdentity||{}),nome:student?.nome||op.studentName,preceptor:op.preceptor,assinatura:Domain.today(),...(saved?.tceData||{})};
-  const input=(key,label,type='text')=>`<label>${label}<input name="${key}" type="${type}" value="${esc(data[key])}" required maxlength="160"></label>`;
+  if(TCE_PRECEPTORS[op.group])data.preceptor=TCE_PRECEPTORS[op.group];
+  const input=(key,label,type='text')=>`<label>${label}<input name="${key}" type="${type}" value="${esc(data[key])}" required maxlength="160" ${key==='preceptor'&&TCE_PRECEPTORS[op.group]?'readonly':''}></label>`;
   modal(`<h2>TCE · ${esc(op.group)}</h2><p>${esc(op.studentName)} · ${esc(op.fieldName)}<br>${fmt(op.start)} a ${fmt(op.end)} · ${Domain.datesBetween(op.start,op.end,op.days).length*op.hours}h previstas.</p><p>Confira os dados antes de emitir. O documento usa o modelo original do campo. Os dados de identificação ficarão salvos no cadastro administrativo do aluno.</p><form id="automatic-tce-form"><input type="hidden" name="opportunityId" value="${esc(id)}"><div class="form-grid">${input('nome','Nome completo')}${input('matricula','Matrícula')}${input('rg','RG')}${input('cpf','CPF')}${input('preceptor','Nome completo do preceptor')}${input('crtr','Registro CRTR')}<label>Turno<select name="turno" required><option value="">Selecione</option>${[['da manhã','Manhã'],['da tarde','Tarde'],['da noite','Noite'],['diurno','Diurno'],['noturno','Noturno']].map(([v,label])=>`<option value="${v}" ${data.turno===v?'selected':''}>${label}</option>`).join('')}</select></label>${input('horario','Horário / intervalos (ex.: das 13h às 17h)')}${input('apolice','Número da apólice confirmada')}${input('seguroInicio','Início da cobertura do seguro','date')}${input('seguroFim','Fim da cobertura do seguro','date')}${input('assinatura','Data de emissão','date')}</div><label><input type="checkbox" required> Conferi identificação, preceptor, horário e cobertura do seguro.</label><button>Salvar e baixar TCE (.docx)</button></form>${saved?.tceData?button('Baixar última emissão salva','tce-download',id):''}`);
 }
 // All TCE personal data stays in admin-only students/settings, never in fields/opportunities.
 async function saveAutomaticTce(form){
   mustAdmin();const f=new FormData(form),id=f.get('opportunityId'),op=tceOpportunity(id);
   const data=Object.fromEntries(['nome','matricula','rg','cpf','preceptor','crtr','turno','horario','apolice','seguroInicio','seguroFim','assinatura'].map(k=>[k,f.get(k).trim()]));
+  if(TCE_PRECEPTORS[op.group])data.preceptor=TCE_PRECEPTORS[op.group];
   const blob=await buildTce(op,data);
   const ref=db.collection('students').doc(op.studentId),contract=db.collection('settings').doc('tce-op-'+id),defaults=db.collection('settings').doc('tce-defaults-'+op.fieldId);
   await db.runTransaction(async tx=>{

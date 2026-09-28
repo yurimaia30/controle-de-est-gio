@@ -1,12 +1,9 @@
 {
-  "firestore": {
-    "rules": "firestore.rules"
-  },
+  "firestore": { "rules": "firestore.rules" },
   "hosting": {
     "public": "public",
     "ignore": [
-      "firebase.json",
-      "**/.*",
+      ".*",
       "**/node_modules/**"
     ],
     "headers": [
@@ -14,26 +11,11 @@
         "source": "**",
         "headers": [
           {
-            "key": "X-Content-Type-Options",
-            "value": "nosniff"
-          },
-          {
             "key": "Cache-Control",
             "value": "no-cache"
           }
         ]
       }
     ]
-  },
-  "emulators": {
-    "firestore": {
-      "port": 8080
-    },
-    "auth": {
-      "port": 9099
-    },
-    "ui": {
-      "enabled": false
-    }
   }
 }
