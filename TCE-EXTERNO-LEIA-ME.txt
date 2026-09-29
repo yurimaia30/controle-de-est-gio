@@ -1,0 +1,18 @@
+TCE EXTERNO
+
+No sistema, abra Estágios externos e cadastre a oportunidade com aluno,
+campo, período, dias, carga horária e preceptor.
+
+Na oportunidade cadastrada, use Gerar TCE externo. Informe os dados da
+concedente, os dados do aluno, o preceptor, CRTR, turno, horário e os dados
+do seguro. O sistema confere se o seguro cobre todo o período do estágio,
+salva os dados no Firebase e baixa o arquivo Word.
+
+O documento mantém exatamente o quadro da instituição de ensino e as
+cláusulas de compromissos da concedente, do aluno e da instituição presentes
+no modelo recebido. O sistema preenche os campos variáveis do estágio.
+
+Para publicar:
+1. Envie o conteúdo da pasta public e os arquivos firebase.json e
+   firestore.rules ao projeto.
+2. No Cloud Shell, execute: bash publicar.sh
